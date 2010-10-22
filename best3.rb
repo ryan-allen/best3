@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 raise 'requires ruby 1.9.2' unless RUBY_VERSION == '1.9.2'
-%w(rubygems bundler/setup typhoeus nokogiri ostruct digest/sha1 time).each { |lib| require(lib) }
+%w(rubygems bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time).each { |lib| require(lib) }
 
 class Best3
   def initialize(*args)
@@ -48,7 +48,7 @@ class Best3
           str << headers[key] # other headers just send the value
         end
       end
-      str << "#{uri}"
+      str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
       str = str.join("\n").chomp
       # auth key thingo stolen from aws::s3 library, lol.
       "AWS #{@key}:#{[OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, str)].pack('m').strip}"
