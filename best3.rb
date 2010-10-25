@@ -10,12 +10,17 @@ class Best3
   end
 
   def s3()
-    S3.new(@key, @secret)
+    Wrapper.new('http://s3.amazonaws.com', @key, @secret)
   end
 
-  class S3
+  def cloudfront()
+    # cloudfront MUST use https
+    Wrapper.new('https://cloudfront.amazonaws.com', @key, @secret)
+  end
+
+  class Wrapper
     def initialize(*args)
-      @key, @secret = args
+      @host, @key, @secret = args
       self
     end
 
@@ -26,7 +31,7 @@ class Best3
   private
 
     def _(request_method, uri, headers, body = nil)
-      response = Typhoeus::Request.send(request_method.downcase, "http://s3.amazonaws.com#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
+      response = Typhoeus::Request.send(request_method.downcase, "#{@host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
       OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
     end
 
@@ -37,19 +42,28 @@ class Best3
     end
 
     def make_auth(request_method, uri, headers, body = nil)
-      str = []
-      str << request_method
-      str << ''
-      str << '' if not headers['Content-Type'] # get requests require an empty line instead of the content type but on a put if you omit it it'll set application/x-download and expect that to be signed
-      headers.keys.sort { |a, b| a.downcase <=> b.downcase }.each do |key|
-        if key.match(/^x-amz/i) # convert special amz headers to expected format
-          str << "#{key.downcase}:#{headers[key]}"
-        else
-          str << headers[key] # other headers just send the value
+      if @host == 'https://cloudfront.amazonaws.com'
+        # cloudfront only requires HMAC of the date
+        str = headers['Date']
+      else
+        str = []
+        str << request_method
+        str << ''
+        str << '' if not headers['Content-Type'] # get requests require an empty line instead of the content type but on a put if you omit it it'll set application/x-download and expect that to be signed
+        headers.keys.sort { |a, b| a.downcase <=> b.downcase }.each do |key|
+          if key.match(/^x-amz/i) # convert special amz headers to expected format
+            str << "#{key.downcase}:#{headers[key]}"
+          else
+            str << headers[key] # other headers just send the value
+          end
         end
+        if uri.include?('&')
+          str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
+        else
+          str << uri
+        end
+        str = str.join("\n").chomp
       end
-      str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
-      str = str.join("\n").chomp
       # auth key thingo stolen from aws::s3 library, lol.
       "AWS #{@key}:#{[OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, str)].pack('m').strip}"
     end
