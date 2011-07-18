@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Ryan Allen"]
   s.email       = ["ryan@ryanface.com"]
-  s.homepage    = "http://rubygems.org/gems/best3"
+  s.homepage    = "https://github.com/ryan-allen/best3"
   s.summary     = %q{Minimal library for interacting with the Amazon Web Service API.}
   s.description = %q{Are you depressed? Has high interest rates got you down? My name is Meatwad and today I'm here to offer you a once in a lifetime opportunity. Sell your organs, live, over the internet. Get money back on your baby!}
 
