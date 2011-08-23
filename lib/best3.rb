@@ -4,7 +4,7 @@ raise 'requires ruby 1.9.2' unless RUBY_VERSION == '1.9.2'
 %w(rubygems openssl bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time).each { |lib| require(lib) }
 
 class Best3
-  VERSION = '0.0.1'
+  VERSION = '0.0.2'
 
   def initialize(*args)
     @key, @secret = args
