@@ -1,7 +1,6 @@
-#!/usr/bin/env ruby
+raise 'Best3 gem requires Ruby 1.9.2' unless RUBY_VERSION == '1.9.2'
 
-raise 'requires ruby 1.9.2' unless RUBY_VERSION == '1.9.2'
-%w(rubygems openssl bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time).each { |lib| require(lib) }
+%w(rubygems bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time openssl).each { |lib| require(lib) }
 
 class Best3
   VERSION = '0.0.2'
