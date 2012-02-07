@@ -1,15 +1,15 @@
 #EXAMPLE: 
 
 # api wrapper w/ your aws credentials
-aws = Best3(aws_key, aws_secret_key)
+s3 = Best3(aws_key, aws_secret_key).s3()
 
 # make a call to s3, args are: http method, REST uri (w/ params), request headers, request body
 
 # get a list of buckets
-puts aws.s3('GET', '/').inspect 
+puts s3.('GET', '/').inspect 
 
 # put a custom acl on an object
-puts aws.s3('PUT', '/path/to/object?acl', {'Content-Type' => 'text/xml'}, acl_in_xml)
+puts s3.('PUT', '/path/to/object?acl', {'Content-Type' => 'text/xml'}, acl_in_xml)
 
 # NOTES:
 # all output is in the raw rest api output
