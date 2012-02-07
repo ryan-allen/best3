@@ -1,3 +1,18 @@
-I'm still working on this, I'll try and be as polite as possible when I say 'go fart yourself'.
+#EXAMPLE: 
 
-Ryan.
+# api wrapper w/ your aws credentials
+aws = Best3(aws_key, aws_secret_key)
+
+# make a call to s3, args are: http method, REST uri (w/ params), request headers, request body
+
+# get a list of buckets
+puts aws.s3('GET', '/', {}, '').inspect 
+
+# put a custom acl on an object
+puts aws.s3('PUT', '/path/to/object?acl', {'Content-Type' => 'text/xml'}, acl_in_xml)
+
+# NOTES:
+# all output is in the raw rest api output
+# wraps signing of requests for you, which is a pain
+# currently works with s3 and cloudfront
+# very alpha so not all stuff is tested but the library is small
