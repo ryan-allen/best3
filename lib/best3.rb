@@ -32,23 +32,31 @@ class Best3
 
   protected
     def request_info_for_signing(request_method, uri, headers)
-      str = []
-      str << request_method
-      str << ''
-      str << '' if not headers['Content-Type'] # get requests require an empty line instead of the content type but on a put if you omit it it'll set application/x-download and expect that to be signed
-      headers.keys.sort { |a, b| a.downcase <=> b.downcase }.each do |key|
-        if key.match(/^x-amz/i) # convert special amz headers to expected format
-          str << "#{key.downcase}:#{headers[key]}"
-        else
-          str << headers[key] # other headers just send the value
-        end
-      end
+      request_lines = []
+      request_lines << request_method
+      
+      request_lines << ''
+      # get requests require an empty line instead of the content type but on a put if you omit it it'll set application/x-download and expect that to be signed
+      request_lines << '' if not headers['Content-Type'] 
+      
+      request_lines + processed_headers(headers)
+
       if uri.include?('&')
-        str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
+        request_lines << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
       else
-        str << uri
+        request_lines << uri
       end
       str.join("\n").chomp
+    end
+
+    def processed_headers(headers)
+      headers.keys.sort { |a, b| a.downcase <=> b.downcase }.collect do |key|
+        if key.match(/^x-amz/i) # convert special amz headers to expected format
+          "#{key.downcase}:#{headers[key]}"
+        else
+          headers[key] # other headers just send the value
+        end
+      end
     end
   end
 
