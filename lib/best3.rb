@@ -41,12 +41,19 @@ class Best3
       
       request_lines + processed_headers(headers)
 
+      request_lines << canonical_uri(uri)
+
+      request_lines.join("\n").chomp
+    end
+
+    def canonical_uri(uri)
+      # This is actually incomplete, but at least it's now in one
+      # easily changeable place
       if uri.include?('&')
-        request_lines << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
+        "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
       else
-        request_lines << uri
+        uri
       end
-      str.join("\n").chomp
     end
 
     def processed_headers(headers)
