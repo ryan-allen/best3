@@ -9,17 +9,25 @@ class Best3
   end
 
   def s3()
-    Wrapper.new('http://s3.amazonaws.com', @key, @secret)
+    S3Wrapper.new(@key, @secret)
   end
 
   def cloudfront()
     # cloudfront MUST use https
-    Wrapper.new('https://cloudfront.amazonaws.com', @key, @secret)
+    CloudFrontWrapper.new(@key, @secret)
+  end
+
+  class CloudFrontWrapper < Wrapper
+    HOST = 'http://s3.amazonaws.com'
+  end
+
+  class S3Wrapper < Wrapper
+    HOST = 'https://cloudfront.amazonaws.com'
   end
 
   class Wrapper
     def initialize(*args)
-      @host, @key, @secret = args
+      @key, @secret = args
     end
 
     def call(request_method, uri, headers = {}, body = nil)
@@ -29,7 +37,7 @@ class Best3
   private
 
     def perform_request(request_method, uri, headers, body = nil)
-      response = Typhoeus::Request.send(request_method.downcase, "#{@host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
+      response = Typhoeus::Request.send(request_method.downcase, "#{HOST}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
       OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
     end
 
@@ -40,7 +48,7 @@ class Best3
     end
 
     def make_auth(request_method, uri, headers, body = nil)
-      if @host == 'https://cloudfront.amazonaws.com'
+      if HOST == 'https://cloudfront.amazonaws.com'
         # cloudfront only requires HMAC of the date
         str = headers['Date']
       else
