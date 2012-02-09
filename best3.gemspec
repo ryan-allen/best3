@@ -6,6 +6,7 @@ Gem::Specification.new do |s|
   s.name        = "best3"
   s.version     = Best3::VERSION
   s.platform    = Gem::Platform::RUBY
+  s.required_ruby_version = ">= 1.9.2"
   s.authors     = ["Ryan Allen"]
   s.email       = ["ryan@ryanface.com"]
   s.homepage    = "https://github.com/ryan-allen/best3"

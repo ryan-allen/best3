@@ -1,5 +1,3 @@
-raise 'Best3 gem requires Ruby 1.9.2' unless RUBY_VERSION == '1.9.2'
-
 %w(rubygems bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time openssl).each { |lib| require(lib) }
 
 class Best3
@@ -22,7 +20,6 @@ class Best3
   class Wrapper
     def initialize(*args)
       @host, @key, @secret = args
-      self
     end
 
     def call(request_method, uri, headers = {}, body = nil)
