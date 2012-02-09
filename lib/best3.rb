@@ -19,10 +19,37 @@ class Best3
 
   class CloudFrontWrapper < Wrapper
     HOST = 'http://s3.amazonaws.com'
+
+  protected
+    def request_info_for_signing(request_method, uri, headers)
+      # cloudfront only requires HMAC of the date
+      headers['Date']
+    end
   end
 
   class S3Wrapper < Wrapper
     HOST = 'https://cloudfront.amazonaws.com'
+
+  protected
+    def request_info_for_signing(request_method, uri, headers)
+      str = []
+      str << request_method
+      str << ''
+      str << '' if not headers['Content-Type'] # get requests require an empty line instead of the content type but on a put if you omit it it'll set application/x-download and expect that to be signed
+      headers.keys.sort { |a, b| a.downcase <=> b.downcase }.each do |key|
+        if key.match(/^x-amz/i) # convert special amz headers to expected format
+          str << "#{key.downcase}:#{headers[key]}"
+        else
+          str << headers[key] # other headers just send the value
+        end
+      end
+      if uri.include?('&')
+        str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
+      else
+        str << uri
+      end
+      str.join("\n").chomp
+    end
   end
 
   class Wrapper
@@ -48,30 +75,10 @@ class Best3
     end
 
     def make_auth(request_method, uri, headers, body = nil)
-      if HOST == 'https://cloudfront.amazonaws.com'
-        # cloudfront only requires HMAC of the date
-        str = headers['Date']
-      else
-        str = []
-        str << request_method
-        str << ''
-        str << '' if not headers['Content-Type'] # get requests require an empty line instead of the content type but on a put if you omit it it'll set application/x-download and expect that to be signed
-        headers.keys.sort { |a, b| a.downcase <=> b.downcase }.each do |key|
-          if key.match(/^x-amz/i) # convert special amz headers to expected format
-            str << "#{key.downcase}:#{headers[key]}"
-          else
-            str << headers[key] # other headers just send the value
-          end
-        end
-        if uri.include?('&')
-          str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
-        else
-          str << uri
-        end
-        str = str.join("\n").chomp
-      end
       # auth key thingo stolen from aws::s3 library, lol.
-      "AWS #{@key}:#{[OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, str)].pack('m').strip}"
+      signed_request = [OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, request_info_for_signing(request_method, uri, headers))].pack('m').strip
+
+      "AWS #{@key}:#{signed_request}"
     end
   end
 end
