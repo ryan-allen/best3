@@ -1,4 +1,4 @@
-%w(rubygems bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time openssl).each { |lib| require(lib) }
+%w(rubygems bundler/setup typhoeus nokogiri strscan digest/sha1 time openssl).each { |lib| require(lib) }
 
 class Best3
   VERSION = '0.0.2'
@@ -16,6 +16,8 @@ class Best3
     CloudFrontWrapper.new(@key, @secret)
   end
 
+  Response = Struct.new(:code, :headers, :body, :response)
+
   class Wrapper
     def initialize(*args)
       @key, @secret = args
@@ -29,7 +31,7 @@ class Best3
 
     def perform_request(request_method, uri, headers, body = nil)
       response = Typhoeus::Request.send(request_method.downcase, "#{host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
-      OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
+      Response.new(response.code, response.headers_hash, Nokogiri::XML(response.body), response)
     end
 
     def make_headers(request_method, uri, headers, body = nil)
