@@ -26,12 +26,12 @@ class Best3
     end
 
     def call(request_method, uri, headers = {}, body = nil)
-      YESTHISMETHODISCALLEDUNDERSCORE!(request_method, uri, headers.clone, body)
+      perform_request(request_method, uri, headers.clone, body)
     end
 
   private
 
-    def YESTHISMETHODISCALLEDUNDERSCORE!(request_method, uri, headers, body = nil)
+    def perform_request(request_method, uri, headers, body = nil)
       response = Typhoeus::Request.send(request_method.downcase, "#{@host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
       OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
     end
