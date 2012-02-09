@@ -36,11 +36,11 @@ class Best3
 
     def make_headers(request_method, uri, headers, body = nil)
       headers['Date'] = Time.now.rfc822
-      headers['Authorization'] = make_auth(request_method, uri, headers, body)
+      headers['Authorization'] = signed_authorisation_header(request_method, uri, headers, body)
       headers
     end
 
-    def make_auth(request_method, uri, headers, body = nil)
+    def signed_authorisation_header(request_method, uri, headers, body = nil)
       # auth key thingo stolen from aws::s3 library, lol.
       signed_request = [OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, request_info_for_signing(request_method, uri, headers))].pack('m').strip
 
