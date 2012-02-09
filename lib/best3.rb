@@ -13,14 +13,45 @@ class Best3
   end
 
   def cloudfront()
-    # cloudfront MUST use https
     CloudFrontWrapper.new(@key, @secret)
   end
 
-  class CloudFrontWrapper < Wrapper
-    HOST = 'http://s3.amazonaws.com'
+  class Wrapper
+    def initialize(*args)
+      @key, @secret = args
+    end
 
+    def call(request_method, uri, headers = {}, body = nil)
+      perform_request(request_method, uri, headers.clone, body)
+    end
+
+  private
+
+    def perform_request(request_method, uri, headers, body = nil)
+      response = Typhoeus::Request.send(request_method.downcase, "#{host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
+      OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
+    end
+
+    def make_headers(request_method, uri, headers, body = nil)
+      headers['Date'] = Time.now.rfc822
+      headers['Authorization'] = make_auth(request_method, uri, headers, body)
+      headers
+    end
+
+    def make_auth(request_method, uri, headers, body = nil)
+      # auth key thingo stolen from aws::s3 library, lol.
+      signed_request = [OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, request_info_for_signing(request_method, uri, headers))].pack('m').strip
+
+      "AWS #{@key}:#{signed_request}"
+    end
+  end
+  
+  class CloudFrontWrapper < Wrapper
   protected
+    def host
+      'http://s3.amazonaws.com'
+    end
+  
     def request_info_for_signing(request_method, uri, headers)
       # cloudfront only requires HMAC of the date
       headers['Date']
@@ -28,9 +59,12 @@ class Best3
   end
 
   class S3Wrapper < Wrapper
-    HOST = 'https://cloudfront.amazonaws.com'
-
   protected
+    def host
+      # cloudfront MUST use https
+      'https://cloudfront.amazonaws.com'
+    end
+
     def request_info_for_signing(request_method, uri, headers)
       request_lines = []
       request_lines << request_method
@@ -64,36 +98,6 @@ class Best3
           headers[key] # other headers just send the value
         end
       end
-    end
-  end
-
-  class Wrapper
-    def initialize(*args)
-      @key, @secret = args
-    end
-
-    def call(request_method, uri, headers = {}, body = nil)
-      perform_request(request_method, uri, headers.clone, body)
-    end
-
-  private
-
-    def perform_request(request_method, uri, headers, body = nil)
-      response = Typhoeus::Request.send(request_method.downcase, "#{HOST}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
-      OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
-    end
-
-    def make_headers(request_method, uri, headers, body = nil)
-      headers['Date'] = Time.now.rfc822
-      headers['Authorization'] = make_auth(request_method, uri, headers, body)
-      headers
-    end
-
-    def make_auth(request_method, uri, headers, body = nil)
-      # auth key thingo stolen from aws::s3 library, lol.
-      signed_request = [OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), @secret, request_info_for_signing(request_method, uri, headers))].pack('m').strip
-
-      "AWS #{@key}:#{signed_request}"
     end
   end
 end
