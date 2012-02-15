@@ -33,7 +33,12 @@ class Best3
 
     def YESTHISMETHODISCALLEDUNDERSCORE!(request_method, uri, headers, body = nil)
       response = Typhoeus::Request.send(request_method.downcase, "#{@host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
-      OpenStruct.new({:code => response.code, :headers => response.headers_hash, :body => Nokogiri::XML(response.body), :response => response})
+      body = if response.headers_hash['Content-Type'] == 'text/xml'
+        Nokogiri::XML(response.body) # wrap up xml
+      else
+        response.body # pass through everything else
+      end
+      OpenStruct.new({:success? => response.code == 200, :code => response.code, :headers => response.headers_hash, :body => body, :response => response})
     end
 
     def make_headers(request_method, uri, headers, body = nil)
@@ -58,10 +63,18 @@ class Best3
             str << headers[key] # other headers just send the value
           end
         end
-        if uri.include?('&')
-          str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
+        if uri.match(/\?versioning|\?location|\?acl|\?torrent|\?lifecycle|\?versionid/) # if there's a sub resource
+          if uri.include?('&')
+            str << "#{StringScanner.new(uri).scan_until(/&/)[0..-2]}"
+          else
+            str << uri
+          end
         else
+          if uri.include?('?')
+            str << "#{StringScanner.new(uri).scan_until(/\?/)[0..-2]}"
+          else
           str << uri
+          end
         end
         str = str.join("\n").chomp
       end
