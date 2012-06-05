@@ -1,9 +1,9 @@
-raise 'Best3 gem requires Ruby 1.9.2' unless RUBY_VERSION == '1.9.2'
+#raise 'Best3 gem requires Ruby 1.9.x' unless RUBY_VERSION.include? '1.9.'
 
 %w(rubygems bundler/setup typhoeus nokogiri strscan ostruct digest/sha1 time openssl).each { |lib| require(lib) }
 
 class Best3
-  VERSION = '0.0.2'
+  VERSION = '0.0.3'
 
   def initialize(*args)
     @key, @secret = args
@@ -33,7 +33,7 @@ class Best3
 
     def YESTHISMETHODISCALLEDUNDERSCORE!(request_method, uri, headers, body = nil)
       response = Typhoeus::Request.send(request_method.downcase, "#{@host}#{uri}", :headers => make_headers(request_method, uri, headers, body), :body => body)
-      body = if response.headers_hash['Content-Type'] == 'text/xml'
+      body = if response.headers_hash['Content-Type'] == 'application/xml'
         Nokogiri::XML(response.body) # wrap up xml
       else
         response.body # pass through everything else
