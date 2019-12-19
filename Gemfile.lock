@@ -2,7 +2,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     nokogiri (1.4.3.1)
-    rack (1.2.1)
+    rack (2.0.8)
     typhoeus (0.1.31)
       rack
 
